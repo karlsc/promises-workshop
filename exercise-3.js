@@ -1,60 +1,62 @@
 var Promise = require('bluebird');
 var request = Promise.promisify(require('request'));
-var prompt = require('prompt');
-Promise.promisifyAll(prompt);
-
-var values = [];
+var prompt = Promise.promisifyAll(require('prompt'));
+var join = Promise.join;
 
 prompt.start();
 
-prompt.getAsync(['city']).then( function (result) {
+prompt.getAsync(['city']).then( 
     
-        return result.city;
+    function (result) {
         
-}).then( function(yourCity){
-
-    return request("https://maps.googleapis.com/maps/api/geocode/json?address="+yourCity);
-
+        return getEverything(result);
+    }
+);
     
-}).spread( function(res, body){
+function getCity(result){    
     
-    var addressInfo = JSON.parse(body);
-    values[0] = addressInfo.results[0].geometry.location.lat;
-    values[1] = addressInfo.results[0].geometry.location.lng
-    console.log("You current location is: "+Math.floor(addressInfo.results[0].geometry.location.lat*100)/100+" x "+Math.floor(addressInfo.results[0].geometry.location.lng*100)/100);
-    return values;
-
+    return request("https://maps.googleapis.com/maps/api/geocode/json?address="+result.city).spread(
+        
+        function(res, body){
+            var cityLocation = JSON.parse(body).results[0].geometry.location;
+            return cityLocation;
+        }
+    );
+}    
     
-}).then( function(){
+function getIss(){
     
-    return request("http://api.open-notify.org/iss-now.json");
+    return request("http://api.open-notify.org/iss-now.json").spread( 
+        
+        function(res, body) {
+            var issLocation = JSON.parse(body).iss_position;
+            return issLocation;
+        }
+    );
+}   
     
-}).spread( function(res, body) {
+function getEverything(yourCity){
     
-    var issInfo = JSON.parse(body);
-    values[2] = issInfo.iss_position.latitude;
-    values[3] = issInfo.iss_position.longitude;
-    console.log("The ISS is now at: "+Math.floor(issInfo.iss_position.latitude*100)/100+" x "+Math.floor(issInfo.iss_position.longitude*100)/100);
-    return values;
-
-}).then( function (){
+    return join(getCity(yourCity), getIss(), 
+        
+        function(city,iss){
+            
+            Number.prototype.toRadians = function() { return this * Math.PI / 180 };
     
-    Number.prototype.toRadians = function() {
-    return this * Math.PI / 180;
-    };
-    
-    var R = 6371000; // metres
-    var φ1 = values[0].toRadians();
-    var φ2 = values[2].toRadians();
-    var Δφ = (values[2]-values[0]).toRadians();
-    var Δλ = (values[3]-values[1]).toRadians();
-
-    var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    var d = R * c;
-    
-    console.log("Your are now "+Math.floor(d/10)/100+"km away of the International Space Station.");
-});
+            var R = 6371000; // metres
+            var φ1 = city.lat.toRadians();
+            var φ2 = iss.latitude.toRadians();
+            var Δφ = (iss.latitude-city.lat).toRadians();
+            var Δλ = (iss.longitude-city.lng).toRadians();
+            var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            var d = R * c;
+            
+            console.log("You current location is: "+Math.floor(city.lat*100)/100+" x "+Math.floor(city.lng*100)/100);
+            console.log("The ISS is now at: "+Math.floor(iss.latitude*100)/100+" x "+Math.floor(iss.longitude*100)/100);
+            console.log("Your are now "+Math.floor(d/10)/100+"km away of the International Space Station.");
+        }
+    );
+}
