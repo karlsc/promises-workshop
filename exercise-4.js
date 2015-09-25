@@ -8,11 +8,7 @@ prompt.start();
 
 prompt.getAsync(['englishWord']).then( function (result) {
     
-    return result.englishWord;
-        
-}).then( function(userWord){
-    
-    return request('http://words.bighugelabs.com/api/2/11c036dfbb595f828a10c807a507e679/' + userWord+"/json");
+    return request('http://words.bighugelabs.com/api/2/11c036dfbb595f828a10c807a507e679/' + result.englishWord+"/json");
         
         
 }).spread( function(res, body) {
