@@ -20,25 +20,32 @@ function letsHaveFun(){
                 function(res, body) {
                     
                     var format = JSON.parse(body);
-                    console.log("\n"+x.word[0].toUpperCase() .bgWhite.red.bold + x.word.slice(1) .bgWhite.red.bold);
-                    
-                    if(format.noun !== undefined){
-                    
-                        var nounSyn = format.noun.syn.map(function(x){return x[0].toUpperCase() + x.slice(1);}).join(", ");
-                        console.log("\nNoun synonyms:\n"+nounSyn+".");
-                    }
-                    if(format.verb !== undefined){
-                        
-                        var verbSyn = format.verb.syn.map(function(x){return x[0].toUpperCase() + x.slice(1);}).join(", ");
-                        console.log("\nVerb synonyms:\n"+verbSyn+".");
-                    }
-                    if(format.adjective !== undefined){
-                        
-                        var adjSyn = format.adjective.syn.map(function(x){return x[0].toUpperCase() + x.slice(1);}).join(", ");
-                        console.log("\nAdjective synonyms:\n"+adjSyn+".");
-                    }
+                    return [x.word,format];
                 }
             ).catch( function(err) {
+                
+                return err;
+                
+            }).then( function(results){
+                
+                console.log("\n"+results[0].charAt(0).toUpperCase() .bgWhite.red.bold + results[0].slice(1) .bgWhite.red.bold);
+                
+                if(results[1].noun !== undefined && results[1].noun !== false){
+                    
+                    var nounSyn = results[1].noun.syn.map(function(x){return x.charAt(0).toUpperCase() + x.slice(1);}).join(", ");
+                    console.log("\nNoun synonyms:\n"+nounSyn+".");
+                }
+                if(results[1].verb !== undefined && results[1].verb !== false){
+                    
+                    var verbSyn = results[1].verb.syn.map(function(x){return x.charAt(0).toUpperCase() + x.slice(1);}).join(", ");
+                    console.log("\nVerb synonyms:\n"+verbSyn+".");
+                }
+                if(results[1].adjective !== undefined && results[1].adjective !== false){
+                    
+                    var adjSyn = results[1].adjective.syn.map(function(x){return x.charAt(0).toUpperCase() + x.slice(1);}).join(", ");
+                    console.log("\nAdjective synonyms:\n"+adjSyn+".");
+                }
+            }).catch( function(err){
                 
                 return err;
             });
